@@ -135,6 +135,8 @@ def main():
         rsi_oversold=strat_config.rsi_oversold,
         rsi_overbought=strat_config.rsi_overbought,
         position_size=float(strat_config.position_size),
+        stop_loss_pips=strat_config.stop_loss_pips,
+        take_profit_pips=strat_config.take_profit_pips,
     )
     
     strategy = MeanReversionStrategy(config=strategy_config)

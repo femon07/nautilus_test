@@ -13,18 +13,18 @@ class StrategyConfig:
     bb_period: int = 20
     bb_std_dev: float = 2.0
     
-    # RSI設定
+    # RSI設定（厳格化: 35/65 → 25/75）
     rsi_period: int = 14
-    rsi_oversold: float = 30.0
-    rsi_overbought: float = 70.0
+    rsi_oversold: float = 25.0   # 厳格化
+    rsi_overbought: float = 75.0  # 厳格化
     
     # リスク管理
-    position_size: float = 1000.0  # FX最小取引サイズ（1000から）
-    stop_loss_atr_multiplier: float = 2.0
-    take_profit_atr_multiplier: float = 3.0
+    position_size: float = 1000.0
+    stop_loss_pips: float = 25.0   # ストップロス (pips)
+    take_profit_pips: float = 30.0  # テイクプロフィット (pips)
     
     # 注文設定
-    limit_order_offset_pips: float = 5.0  # 指値の価格オフセット
+    limit_order_offset_pips: float = 5.0
 
 
 @dataclass
