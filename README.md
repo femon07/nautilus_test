@@ -1,16 +1,20 @@
 # NautilusTrader FX Backtest Sandbox
 
+![Python](https://img.shields.io/badge/python-3.12%2B-blue)
+![Docker](https://img.shields.io/badge/docker-supported-2496ED)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 [NautilusTrader](https://github.com/nautechsystems/nautilus_trader) を使用した、FXアルゴリズム取引のためのバックテスト環境サンドボックスです。
 実データ（Dukascopy）を用いたより実践的なバックテストが可能です。
 
-## 🌟 特徴
+## 特徴
 
 *   **NautilusTraderベース**: 高速でイベント駆動型のバックテストエンジンを採用。
 *   **実データ対応**: DukascopyからTickデータを直接ダウンロードし、1分足に変換して使用するローダーを実装済み。
 *   **平均回帰戦略**: ボリンジャーバンド、RSI、トレンドフィルター(EMA)、ATRベースの動的SL/TPを組み合わせた戦略を実装。
 *   **Docker対応**: 環境構築の手間を最小限に抑え、すぐにバックテストを実行可能。
 
-## 📁 プロジェクト構造
+## プロジェクト構造
 
 ```
 .
@@ -25,7 +29,7 @@
 └── docker-compose.yml    # Docker環境定義
 ```
 
-## 🚀 クイックスタート (Docker推奨)
+## クイックスタート (Docker推奨)
 
 ### 1. 準備
 
@@ -47,7 +51,7 @@ docker compose run --rm backtest python backtest.py
 
 実行が完了すると、コンソールに統計情報が表示され、`logs/` ディレクトリに注文履歴とポジション履歴のCSVが出力されます。
 
-## 🛠 戦略について
+## 戦略について
 
 ### 平均回帰戦略 (Mean Reversion)
 
@@ -59,7 +63,7 @@ docker compose run --rm backtest python backtest.py
 *   **エグジット管理**:
     *   **SL/TP**: ATR(Average True Range)に基づき、ボラティリティに合わせて動的に設定。
 
-## ⚙️ 設定の変更
+## 設定の変更
 
 パラメータの変更は `config.py` を編集することで行えます。
 
@@ -75,7 +79,7 @@ class StrategyConfig:
     # ...
 ```
 
-## 📦 ローカル環境での実行 (開発者向け)
+## ローカル環境での実行 (開発者向け)
 
 Python 3.12以上が必要です。
 
