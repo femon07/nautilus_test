@@ -18,7 +18,7 @@ from nautilus_trader.test_kit.providers import TestInstrumentProvider
 
 from config import BacktestConfig, StrategyConfig
 from strategies.mean_reversion import MeanReversionStrategy
-from utils.data_loader import save_synthetic_data
+
 
 
 def main():
