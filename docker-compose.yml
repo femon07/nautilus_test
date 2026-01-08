@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  backtest:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nautilus_backtest
+    volumes:
+      # ソースコードのマウント（開発時のホットリロード用）
+      - ./strategies:/app/strategies
+      - ./utils:/app/utils
+      - ./tests:/app/tests
+      - ./config.py:/app/config.py
+      - ./backtest.py:/app/backtest.py
+      # データ永続化
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=INFO
+    working_dir: /app
+    # デフォルトではコマンド指定なし（docker compose run で個別実行）
+    # command: python backtest.py

@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+env/
+venv/
+.env
+
+# Data and Logs
+data/*.csv
+logs/*.csv
+logs/*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Nautilus
+.nautilus/
