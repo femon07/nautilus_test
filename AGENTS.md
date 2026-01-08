@@ -2,6 +2,8 @@
 
 このプロジェクトは、[NautilusTrader](https://github.com/nautechsystems/nautilus_trader) を使用したアルゴリズム取引のバックテスト環境のサンドボックスです。
 
+自然言語で生成するアウトプット(チャット,plan,walkthrough等)は**必ず**日本語で出力すること
+
 ## 📁 構造と機能
 
 - **strategies/**: 取引戦略のコード。現在は平均回帰戦略 (`mean_reversion.py`) が実装されています。

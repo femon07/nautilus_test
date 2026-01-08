@@ -65,7 +65,6 @@ def main():
     # FillModelの設定
     fill_model = FillModel(
         prob_fill_on_limit=1.0,
-        prob_fill_on_stop=1.0,
         prob_slippage=0.0,
     )
     
@@ -143,9 +142,11 @@ def main():
         rsi_period=strat_config.rsi_period,
         rsi_oversold=strat_config.rsi_oversold,
         rsi_overbought=strat_config.rsi_overbought,
+        ema_period=strat_config.ema_period,
         position_size=float(strat_config.position_size),
-        stop_loss_pips=strat_config.stop_loss_pips,
-        take_profit_pips=strat_config.take_profit_pips,
+        atr_period=strat_config.atr_period,
+        sl_atr_mult=strat_config.sl_atr_mult,
+        tp_atr_mult=strat_config.tp_atr_mult,
     )
     
     strategy = MeanReversionStrategy(config=strategy_config)

@@ -15,13 +15,17 @@ class StrategyConfig:
     
     # RSI設定（厳格化: 35/65 → 25/75）
     rsi_period: int = 14
-    rsi_oversold: float = 25.0   # 厳格化
-    rsi_overbought: float = 75.0  # 厳格化
+    rsi_oversold: float = 25.0
+    rsi_overbought: float = 75.0
     
-    # リスク管理
+    # トレンドフィルター (EMA)
+    ema_period: int = 200
+    
+    # リスク管理 (ATR Based)
     position_size: float = 1000.0
-    stop_loss_pips: float = 25.0   # ストップロス (pips)
-    take_profit_pips: float = 30.0  # テイクプロフィット (pips)
+    atr_period: int = 14
+    sl_atr_mult: float = 2.0
+    tp_atr_mult: float = 3.0
     
     # 注文設定
     limit_order_offset_pips: float = 5.0
@@ -35,7 +39,7 @@ class BacktestConfig:
     instrument_id: str = "EUR/USD.SIM"
     venue: str = "SIM"
     start_date: str = "2023-01-01"
-    end_date: str = "2023-01-31"  # 1ヶ月分に短縮してテスト
+    end_date: str = "2023-01-31"  # 1ヶ月分
     bar_type: str = "1-MINUTE-MID"
     
     # シミュレーション設定
