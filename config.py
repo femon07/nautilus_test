@@ -35,7 +35,7 @@ class BacktestConfig:
     instrument_id: str = "EUR/USD.SIM"
     venue: str = "SIM"
     start_date: str = "2023-01-01"
-    end_date: str = "2023-12-31"
+    end_date: str = "2023-01-31"  # 1ヶ月分に短縮してテスト
     bar_type: str = "1-MINUTE-MID"
     
     # シミュレーション設定

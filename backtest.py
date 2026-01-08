@@ -31,15 +31,21 @@ def main():
     bt_config = BacktestConfig()
     strat_config = StrategyConfig()
     
-    # 1. 合成データ生成
-    print("\n[1/4] 合成データ生成中...")
-    data_path = save_synthetic_data(
-        output_path="./data/EUR_USD_synthetic.csv",
+    # 1. データの準備 (Dukascopyから取得)
+    print("\n[1/4] データ準備中...")
+    
+    from utils.dukascopy_loader import load_dukascopy_data
+    
+    # Dukascopyのシンボル形式
+    SYMBOL = "EURUSD"
+    # NautilusTraderでのID
+    INSTRUMENT_ID = "EUR/USD"
+    
+    data_path = load_dukascopy_data(
+        import_path=f"./data/{SYMBOL}_M1.csv",
+        symbol=SYMBOL,
         start_date=bt_config.start_date,
-        end_date=bt_config.end_date,
-        initial_price=1.1000,
-        volatility=0.0015,
-        trend=0.00001
+        end_date=bt_config.end_date
     )
     
     # 2. バックテストエンジン設定
@@ -51,16 +57,16 @@ def main():
     
     engine = BacktestEngine(config=engine_config)
     
-    # 3. venueと口座の追加（楽器より先）
+    # 3. venueと口座の追加
     print("\n[3/4] venueと口座設定中...")
     
     from nautilus_trader.backtest.models import FillModel
     
-    # FillModelを設定（バーデータでの約定を有効化）
+    # FillModelの設定
     fill_model = FillModel(
-        prob_fill_on_limit=1.0,  # 指値注文の約定確率
-        prob_fill_on_stop=1.0,   # ストップ注文の約定確率
-        prob_slippage=0.0,       # スリッページ確率
+        prob_fill_on_limit=1.0,
+        prob_fill_on_stop=1.0,
+        prob_slippage=0.0,
     )
     
     engine.add_venue(
@@ -76,23 +82,26 @@ def main():
     print("\n[4/4] データ読み込み中...")
     
     # EUR/USD楽器の作成
-    EUR_USD = TestInstrumentProvider.default_fx_ccy("EUR/USD", venue=Venue("SIM"))
-    engine.add_instrument(EUR_USD)
+    eur_usd = TestInstrumentProvider.default_fx_ccy(INSTRUMENT_ID, venue=Venue("SIM"))
+    engine.add_instrument(eur_usd)
     
-    # CSVデータの読み込み
-    df = pd.read_csv(data_path)
+    # データの読み込み
+    df = data_path  # load_dukascopy_dataはDataFrameを返す
     df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
     df = df.set_index('timestamp')
     
-    # BarDataWranglerでNautilusデータに変換
+    # NautilusTrader用のバーデータ作成
     from nautilus_trader.model.data import BarType as BarTypeClass
-    # NautilusTraderのbar_type形式: INSTRUMENT_ID-INTERVAL-PRICE_TYPE-AGGREGATION_SOURCE
-    bar_type_str = f"{EUR_USD.id}-1-MINUTE-MID-EXTERNAL"
+    
+    # バータイプ定義 (DukascopyのデータはBid/Askではなく単一価格系列として扱う場合、MIDまたはLASTとする)
+    # ここではdukascopy-pythonの仕様上、Bidを採用することが多いため、MIDとして扱うか検討が必要だが
+    # 簡易的にMIDとして扱う
+    bar_type_str = f"{eur_usd.id}-1-MINUTE-MID-EXTERNAL"
     bar_type_obj = BarTypeClass.from_str(bar_type_str)
     
     wrangler = BarDataWrangler(
         bar_type=bar_type_obj,
-        instrument=EUR_USD,
+        instrument=eur_usd,
     )
     
     bars = wrangler.process(
@@ -103,17 +112,16 @@ def main():
     engine.add_data(bars)
     print(f"✓ {len(bars):,}個のバーデータを読み込みました")
     
-    # QuoteTickデータを生成（成行注文の約定に必要）
+    # QuoteTickデータを生成（バックテストの約定判定用、バーデータから擬似生成）
     from nautilus_trader.persistence.wranglers import QuoteTickDataWrangler
     
-    # バーデータからQuoteTick用のDataFrameを作成
     quote_df = df.copy()
     quote_df['bid'] = df['close'] - 0.00005  # 0.5pips spread
     quote_df['ask'] = df['close'] + 0.00005
     quote_df['bid_size'] = 1_000_000
     quote_df['ask_size'] = 1_000_000
     
-    quote_wrangler = QuoteTickDataWrangler(instrument=EUR_USD)
+    quote_wrangler = QuoteTickDataWrangler(instrument=eur_usd)
     ticks = quote_wrangler.process(quote_df)
     
     engine.add_data(ticks)
@@ -126,8 +134,9 @@ def main():
     from strategies.mean_reversion import MeanReversionConfig
     
     # 戦略設定
+    # 戦略設定
     strategy_config = MeanReversionConfig(
-        instrument_id=str(EUR_USD.id),
+        instrument_id=str(eur_usd.id),
         bar_type=bar_type_str,
         bb_period=strat_config.bb_period,
         bb_std_dev=strat_config.bb_std_dev,
