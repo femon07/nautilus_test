@@ -1,6 +1,6 @@
 # NautilusTrader FX Backtest Sandbox
 
-![Python](https://img.shields.io/badge/python-3.12%2B-blue)
+![Python](https://img.shields.io/badge/python-3.11-blue)
 ![Docker](https://img.shields.io/badge/docker-supported-2496ED)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -69,6 +69,14 @@ docker compose run --rm backtest python backtest.py
 
 ```python
 @dataclass
+class BacktestConfig:
+    # データ設定
+    symbol: str = "EURUSD"
+    start_date: str = "2023-01-01"
+    end_date: str = "2023-02-01"  # 排他的（この日を含まない）
+    # ...
+
+@dataclass
 class StrategyConfig:
     # トレンドフィルター期間
     ema_period: int = 200
@@ -78,6 +86,12 @@ class StrategyConfig:
     tp_atr_mult: float = 3.0
     # ...
 ```
+
+> [!IMPORTANT]
+> **日付範囲について**: `end_date` は **排他的（Exclusive）** として扱われます。例えば、1月31日までを含めたい場合は、`end_date="2023-02-01"` と設定してください。
+
+> [!NOTE]
+> **データキャッシュについて**: データは `data/{symbol}_{start}_{end}.csv` の形式で保存されます。期間を変更すると新しいファイルがダウンロードされます。
 
 ## ローカル環境での実行 (開発者向け)
 

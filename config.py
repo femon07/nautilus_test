@@ -36,11 +36,12 @@ class BacktestConfig:
     """バックテスト実行設定"""
     
     # データ設定
-    instrument_id: str = "EUR/USD.SIM"
+    symbol: str = "EURUSD"
+    instrument_id: str = "EUR/USD"
     venue: str = "SIM"
     start_date: str = "2023-01-01"
-    end_date: str = "2023-01-31"  # 1ヶ月分
-    bar_type: str = "1-MINUTE-MID"
+    end_date: str = "2023-02-01"  # 1ヶ月分 (排他的: 2/1は含まない)
+    bar_type: str = "1-MINUTE-MID-EXTERNAL"
     
     # シミュレーション設定
     initial_balance: float = 100000.0

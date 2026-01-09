@@ -8,7 +8,7 @@ import lzma
 import struct
 import pandas as pd
 import requests
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 import time
 
@@ -58,7 +58,7 @@ def _download_hour(symbol: str, dt: datetime, session: requests.Session) -> list
             if resp.status_code == 200 and len(resp.content) > 0:
                 decompressed = _decompress_lzma(resp.content)
                 if decompressed:
-                    base_ts = datetime(dt.year, dt.month, dt.day, dt.hour)
+                    base_ts = datetime(dt.year, dt.month, dt.day, dt.hour, tzinfo=timezone.utc)
                     return _parse_ticks(decompressed, base_ts)
             elif resp.status_code == 404:
                 # データが存在しない時間帯（週末など）
@@ -89,47 +89,50 @@ def _resample_to_m1(ticks_df: pd.DataFrame) -> pd.DataFrame:
     
     return ohlc
 
-def load_dukascopy_data(import_path: str, symbol: str, start_date, end_date) -> pd.DataFrame:
+def load_dukascopy_data(symbol: str, start_date: datetime, end_date: datetime) -> pd.DataFrame:
     """
     Dukascopyから直接データをダウンロードし、CSVとして保存・読み込みを行う
+    キャッシュファイル名は期間を含む形式で自動生成されます。
     
     Parameters
     ----------
-    import_path : str
-        保存先のパス (例: "./data/EURUSD_M1.csv")
     symbol : str
         通貨ペア (例: "EURUSD")
-    start_date : datetime or date or str
-        開始日
-    end_date : datetime or date or str
-        終了日
+    start_date : datetime
+        開始日時 (TZ-naive or UTC)
+    end_date : datetime
+        終了日時 (排他的: この日時を含まない)
         
     Returns
     -------
     pd.DataFrame
-        timestamp, open, high, low, close, volume を含むDataFrame
+        timestamp (UTC), open, high, low, close, volume を含むDataFrame
     """
-    path = Path(import_path)
+    # まず入力日付をUTCに正規化する
+    if start_date.tzinfo is None:
+        # naiveならUTCとみなす
+        start_date = start_date.replace(tzinfo=timezone.utc)
+    else:
+        start_date = start_date.astimezone(timezone.utc)
+        
+    if end_date.tzinfo is None:
+        end_date = end_date.replace(tzinfo=timezone.utc)
+    else:
+        end_date = end_date.astimezone(timezone.utc)
+
+    # 日付文字列フォーマット(時刻まで含める)
+    fmt = "%Y%m%d-%H%M"
+    filename = f"{symbol}_{start_date.strftime(fmt)}_{end_date.strftime(fmt)}.csv"
+    path = Path(f"./data/{filename}")
     
     # 既にファイルが存在するかチェック
     if path.exists():
         print(f"✓ キャッシュされたデータを使用します: {path}")
         df = pd.read_csv(path)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
         return df
 
-    # 日付型への変換
-    if isinstance(start_date, str):
-        start_date = datetime.strptime(start_date, "%Y-%m-%d")
-    elif isinstance(start_date, date) and not isinstance(start_date, datetime):
-        start_date = datetime.combine(start_date, datetime.min.time())
-        
-    if isinstance(end_date, str):
-        end_date = datetime.strptime(end_date, "%Y-%m-%d")
-    elif isinstance(end_date, date) and not isinstance(end_date, datetime):
-        end_date = datetime.combine(end_date, datetime.min.time())
-
-    print(f"Dukascopyからデータをダウンロード中: {symbol} ({start_date.date()} - {end_date.date()})...")
+    print(f"Dukascopyからデータをダウンロード中: {symbol} ({start_date} - {end_date})...")
     
     # ディレクトリ作成
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,11 +140,14 @@ def load_dukascopy_data(import_path: str, symbol: str, start_date, end_date) -> 
     all_ticks = []
     session = requests.Session()
     
-    current = start_date
-    total_hours = int((end_date - start_date).total_seconds() / 3600)
+    # Dukascopy API用にnaiveなUTC時間を作成
+    current = start_date.replace(tzinfo=None)
+    end_dt_naive = end_date.replace(tzinfo=None)
+    
+    total_hours = int((end_dt_naive - current).total_seconds() / 3600)
     processed = 0
     
-    while current < end_date:
+    while current < end_dt_naive:
         ticks = _download_hour(symbol, current, session)
         all_ticks.extend(ticks)
         

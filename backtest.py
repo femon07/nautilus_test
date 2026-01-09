@@ -36,16 +36,14 @@ def main():
     
     from utils.dukascopy_loader import load_dukascopy_data
     
-    # Dukascopyのシンボル形式
-    SYMBOL = "EURUSD"
-    # NautilusTraderでのID
-    INSTRUMENT_ID = "EUR/USD"
-    
-    data_path = load_dukascopy_data(
-        import_path=f"./data/{SYMBOL}_M1.csv",
-        symbol=SYMBOL,
-        start_date=bt_config.start_date,
-        end_date=bt_config.end_date
+    # 日付オブジェクト変換 (UTCとして解釈)
+    start_dt = pd.to_datetime(bt_config.start_date).tz_localize('UTC').to_pydatetime()
+    end_dt = pd.to_datetime(bt_config.end_date).tz_localize('UTC').to_pydatetime()
+
+    df = load_dukascopy_data(
+        symbol=bt_config.symbol,
+        start_date=start_dt,
+        end_date=end_dt
     )
     
     # 2. バックテストエンジン設定
@@ -69,7 +67,7 @@ def main():
     )
     
     engine.add_venue(
-        venue=Venue("SIM"),
+        venue=Venue(bt_config.venue),
         oms_type=OmsType.NETTING,
         account_type=AccountType.MARGIN,
         base_currency=USD,
@@ -81,11 +79,12 @@ def main():
     print("\n[4/4] データ読み込み中...")
     
     # EUR/USD楽器の作成
-    eur_usd = TestInstrumentProvider.default_fx_ccy(INSTRUMENT_ID, venue=Venue("SIM"))
+    eur_usd = TestInstrumentProvider.default_fx_ccy(bt_config.instrument_id, venue=Venue(bt_config.venue))
     engine.add_instrument(eur_usd)
     
     # データの読み込み
-    df = data_path  # load_dukascopy_dataはDataFrameを返す
+    # データの読み込み
+    # df is already loaded from load_dukascopy_data
     df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True)
     df = df.set_index('timestamp')
     
@@ -95,7 +94,7 @@ def main():
     # バータイプ定義 (DukascopyのデータはBid/Askではなく単一価格系列として扱う場合、MIDまたはLASTとする)
     # ここではdukascopy-pythonの仕様上、Bidを採用することが多いため、MIDとして扱うか検討が必要だが
     # 簡易的にMIDとして扱う
-    bar_type_str = f"{eur_usd.id}-1-MINUTE-MID-EXTERNAL"
+    bar_type_str = f"{eur_usd.id}-{bt_config.bar_type}"
     bar_type_obj = BarTypeClass.from_str(bar_type_str)
     
     wrangler = BarDataWrangler(
@@ -169,7 +168,7 @@ def main():
     log_dir.mkdir(parents=True, exist_ok=True)
     
     # パフォーマンス統計
-    account = engine.trader.generate_account_report(Venue("SIM"))
+    account = engine.trader.generate_account_report(Venue(bt_config.venue))
     print("\n### 口座サマリー ###")
     print(account)
     
